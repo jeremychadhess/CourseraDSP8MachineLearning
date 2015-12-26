@@ -1,0 +1,92 @@
+---
+title: "Coursera Data Science Specialization Course 8 Machine Learning Project"
+author: "Jeremy Chad Hess"
+date: "December 25, 2015"
+output: html_document
+---
+
+This is a project for the Coursera Data Science Specialization Course 8 Machine Learning.  I analyzed accelerometer data on people performing six barbell excercises to predict the form they used.  This is the classe variable in the data set.  The data set, and related documentation can be found at the following website: <http://groupware.les.inf.puc-rio.br/har>.
+
+Here are some additional details on the data source:
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13). 
+Stuttgart, Germany: ACM SIGCHI, 2013. 
+
+Here are the provided training and testing data sets.
+
+```{r}
+training <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+
+testing <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+```
+
+The data set had variables associated with pitch, roll, yaw, acceleration and x, y and z coordinates for each of these.  In order to avoid overfitting, I decided to avoid using the x, y and z coordinate variables and instead selected only variables that I considered summary statistics and created new training and testing sets based on those variables.  In the end, I was able to reach a result with sufficient accuracy using this reasoning, so I settled on this approach.  The chosen variables are listed below in the code.
+
+```{r}
+trainFieldList <- c("classe","roll_belt", "pitch_belt", "yaw_belt", "total_accel_belt","roll_arm","pitch_arm","yaw_arm","total_accel_arm","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm")
+train <- training[,trainFieldList]
+
+testFieldList <- c("roll_belt", "pitch_belt", "yaw_belt", "total_accel_belt","roll_arm","pitch_arm","yaw_arm","total_accel_arm","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm")
+test <- testing[,testFieldList]
+```
+
+
+I decided that Random Forest would be the best model to use for predicting the form used to  perform these dumbbell excersises based on the high level accuracy that can be attained for classification problems.
+
+
+```{r}
+library(lattice)
+library(ggplot2)
+library(caret)
+
+library(randomForest)
+
+set.seed(4242)
+
+rfModFit <- train(classe ~ .,data = train, method = 'rf', ntree=45, importance=TRUE)
+
+rfModFit$finalModel
+```
+
+When choosing the number of trees, I started with 20 and found that the accuracy level did not meet my preferred goal of 1% percent. I increased the number of the trees in increments of 5, until I found that 45 trees were enough to achieve the accurace goal I was after.
+
+I expect the out of sample error to be less than one percent as shown by the final model cross validation stats shown below.
+
+```{r}
+rfModFit$finalModel
+```
+
+Based on this successful modeling on the training set, I used the model to predict the "classe" variable on the test set.
+
+```{r}
+result <- predict(rfModFit,testing)
+
+print(result)
+```
+
+Then I used the following function, provided in the assignment description, to provide a file for each prediction.  I then manually submitted the resulting 20 files to the course website.
+
+
+```{r}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(result)
+```
+
+
+
+
+
+
+
+
+
+
+
